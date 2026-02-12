@@ -1,11 +1,13 @@
 {
   "name": "stryde-server",
   "version": "1.0.0",
+  "description": "Stryde backend - Solana-powered walk-to-earn API",
   "type": "module", 
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
