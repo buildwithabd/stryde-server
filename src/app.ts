@@ -9,6 +9,8 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
+import logger from "./utils/logger.js";
+import { errorHandler, notFound } from "./middleware/errorHandler.js";
 
 const app = express();
 
@@ -51,14 +53,19 @@ app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
 
-// Logging
-if (process.env.NODE_ENV !== "test") {
-  app.use(morgan("dev"));
-}
-
 // Body Parsing
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Logging
+if (process.env.NODE_ENV !== "test") {
+  app.use(
+    morgan("combined", {
+      stream: { write: (msg: string) => logger.http(msg.trim()) },
+      skip: (req: Request) => req.url === "/health",
+    }),
+  );
+}
 
 // Health Check
 app.get("/health", (req: Request, res: Response) => {
@@ -79,5 +86,8 @@ app.use((req: Request, res: Response) => {
     message: `Route ${req.method} ${req.path} not found`,
   });
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 export default app;
