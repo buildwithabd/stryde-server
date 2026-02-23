@@ -1,8 +1,14 @@
 import "dotenv/config";
-import express from "express";
+import express, {
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import rateLimit from "express-rate-limit";
+import morgan from "morgan";
 
 const app = express();
 
@@ -10,7 +16,68 @@ const app = express();
 app.use(helmet());
 app.use(compression());
 
-app.use(cors());
-app.use(express.json());
+// CORS
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
+// Rate Limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests, please try again later.",
+  },
+});
+app.use("/api/", globalLimiter);
+
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: {
+    success: false,
+    message: "Too many auth attempts, please try again in 15 minutes.",
+  },
+});
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/auth/forgot-password", authLimiter);
+
+// Logging
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("dev"));
+}
+
+// Body Parsing
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+// Health Check
+app.get("/health", (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    status: "OK",
+    service: "Stryde API",
+    version: "1.0.0",
+    network: process.env.SOLANA_NETWORK || "devnet",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// 404 Handler
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.path} not found`,
+  });
+});
 
 export default app;
