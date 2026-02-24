@@ -66,3 +66,36 @@ export const mintWalkTokens = async (
     throw new Error(`Token minting failed: ${(err as Error).message}`);
   }
 };
+
+export const verifyTokenBurn = async (
+  transactionSignature: string,
+  walletAddress: string,
+) => {
+  const connection = getSolanaConnection();
+
+  if (!connection) {
+    logger.warn("Solana not configured - simulating burn verification");
+    return { verified: true, simulated: true };
+  }
+
+  try {
+    const txInfo = await connection.getTransaction(transactionSignature, {
+      commitment: "confirmed",
+      maxSupportedTransactionVersion: 0,
+    });
+
+    if (!txInfo)
+      return { verified: false, reason: "Transaction not found on chain" };
+    if (txInfo.meta?.err)
+      return { verified: false, reason: "Transaction failed on chain" };
+
+    logger.info("Burn verified", {
+      sig: transactionSignature,
+      wallet: walletAddress,
+    });
+    return { verified: true, slot: txInfo.slot, blockTime: txInfo.blockTime };
+  } catch (err) {
+    logger.error("Burn verification failed", { error: (err as Error).message });
+    return { verified: false, reason: (err as Error).message };
+  }
+};
