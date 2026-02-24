@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import type { AuthRequest } from "../middleware/auth.js";
 import type { CreateUserInput } from "../types/user.js";
+import { isValidSolanaAddress } from "../services/solanaService.js";
 
 // Helpers
 const generateAccessToken = (id: string, walletAddress: string) => {
@@ -26,6 +27,14 @@ export const connectWallet = async (req: Request, res: Response) => {
       res
         .status(400)
         .json({ success: false, message: "Wallet address is required" });
+      return;
+    }
+
+    // Validate it's a real Solana address before doing anything
+    if (!isValidSolanaAddress(walletAddress)) {
+      res
+        .status(400)
+        .json({ success: false, message: "Invalid Solana wallet address" });
       return;
     }
 
