@@ -99,3 +99,36 @@ export const verifyTokenBurn = async (
     return { verified: false, reason: (err as Error).message };
   }
 };
+
+export const releaseChallengeEscrow = async (
+  winnerWalletAddress: string,
+  amount: number,
+) => {
+  const treasury = getTreasuryKeypair();
+  if (!treasury) {
+    logger.warn("Solana not configured - simulating escrow release");
+    return { simulated: true, amount, winner: winnerWalletAddress };
+  }
+  return mintWalkTokens(winnerWalletAddress, amount);
+};
+
+export const getOnChainTokenBalance = async (walletAddress: string) => {
+  const connection = getSolanaConnection();
+  const mint = getWalkTokenMint();
+  if (!connection || !mint) return null;
+
+  try {
+    const walletPubkey = new PublicKey(walletAddress);
+    const { value } = await connection.getParsedTokenAccountsByOwner(
+      walletPubkey,
+      { mint },
+    );
+    if (value.length === 0) return 0;
+    return value[0]?.account.data.parsed.info.tokenAmount.uiAmount ?? 0;
+  } catch (err) {
+    logger.error("Failed to fetch on-chain balance", {
+      error: (err as Error).message,
+    });
+    return null;
+  }
+};
