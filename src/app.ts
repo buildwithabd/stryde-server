@@ -1,16 +1,14 @@
 import "dotenv/config";
-import express, {
-  type Request,
-  type Response,
-  type NextFunction,
-} from "express";
+import express, { type Request, type Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import rateLimit from "express-rate-limit";
 import morgan from "morgan";
+
 import logger from "./utils/logger.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
+import authRoutes from "./routes/auth.js";
+import { authLimiter, globalLimiter } from "./middleware/rateLimiter.js";
 
 const app = express();
 
@@ -29,26 +27,8 @@ app.use(
 );
 
 // Rate Limiting
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Too many requests, please try again later.",
-  },
-});
 app.use("/api/", globalLimiter);
 
-export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: {
-    success: false,
-    message: "Too many auth attempts, please try again in 15 minutes.",
-  },
-});
 app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 app.use("/api/auth/forgot-password", authLimiter);
@@ -78,6 +58,9 @@ app.get("/health", (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// API Routes
+app.use("/api/auth", authRoutes);
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
