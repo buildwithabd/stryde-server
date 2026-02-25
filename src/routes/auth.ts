@@ -7,7 +7,7 @@ import {
   getMe,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
-import { authLimiter } from "../app.js";
+import { authLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
 
