@@ -1,9 +1,9 @@
-import type { Request, Response } from "express";
-import jwt, { type JwtPayload } from "jsonwebtoken";
-import User from "../models/User.js";
-import type { AuthRequest } from "../middleware/auth.js";
-import type { CreateUserInput } from "../types/user.js";
-import { isValidSolanaAddress } from "../services/solanaService.js";
+import type { Request, Response } from 'express';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
+import User from '../models/User.js';
+import type { AuthRequest } from '../middleware/auth.js';
+import type { CreateUserInput } from '../types/user.js';
+import { isValidSolanaAddress } from '../services/solanaService.js';
 import {
   sendSuccess,
   sendCreated,
@@ -11,8 +11,8 @@ import {
   sendUnauthorized,
   sendNotFound,
   sendError,
-} from "../utils/apiResponse.js";
-import logger from "../utils/logger.js";
+} from '../utils/apiResponse.js';
+import logger from '../utils/logger.js';
 
 // Types
 interface RefreshTokenPayload extends JwtPayload {
@@ -22,14 +22,14 @@ interface RefreshTokenPayload extends JwtPayload {
 // Helpers
 const generateAccessToken = (id: string, walletAddress: string): string => {
   const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error("JWT_SECRET is not defined");
-  return jwt.sign({ id, walletAddress }, secret, { expiresIn: "15m" });
+  if (!secret) throw new Error('JWT_SECRET is not defined');
+  return jwt.sign({ id, walletAddress }, secret, { expiresIn: '15m' });
 };
 
 const generateRefreshToken = (id: string): string => {
   const secret = process.env.JWT_REFRESH_SECRET;
-  if (!secret) throw new Error("JWT_REFRESH_SECRET is not defined");
-  return jwt.sign({ id }, secret, { expiresIn: "7d" });
+  if (!secret) throw new Error('JWT_REFRESH_SECRET is not defined');
+  return jwt.sign({ id }, secret, { expiresIn: '7d' });
 };
 
 // Connect Wallet
@@ -38,11 +38,11 @@ export const connectWallet = async (req: Request, res: Response) => {
     const { walletAddress } = req.body as { walletAddress: string };
 
     if (!walletAddress) {
-      return sendBadRequest(res, "Wallet address is required");
+      return sendBadRequest(res, 'Wallet address is required');
     }
 
     if (!isValidSolanaAddress(walletAddress)) {
-      return sendBadRequest(res, "Invalid Solana wallet address");
+      return sendBadRequest(res, 'Invalid Solana wallet address');
     }
 
     let user = await User.findOne({ walletAddress });
@@ -52,9 +52,8 @@ export const connectWallet = async (req: Request, res: Response) => {
       user = await User.create({
         walletAddress,
         username: `user_${walletAddress.slice(0, 8).toLowerCase()}`,
-        displayName: "New User",
-        avatarUrl: "",
-        bio: "",
+        avatarUrl: '',
+        bio: '',
       });
       isNewUser = true;
       logger.info(`New user created: ${walletAddress}`);
@@ -73,7 +72,7 @@ export const connectWallet = async (req: Request, res: Response) => {
 
     return isNewUser
       ? sendCreated(res, {
-          message: "Account created successfully",
+          message: 'Account created successfully',
           data: {
             isNewUser,
             accessToken,
@@ -82,7 +81,7 @@ export const connectWallet = async (req: Request, res: Response) => {
           },
         })
       : sendSuccess(res, {
-          message: "Wallet connected successfully",
+          message: 'Wallet connected successfully',
           data: {
             isNewUser,
             accessToken,
@@ -91,8 +90,8 @@ export const connectWallet = async (req: Request, res: Response) => {
           },
         });
   } catch (err) {
-    logger.error("connectWallet error", { error: (err as Error).message });
-    return sendError(res, { message: "Server error" });
+    logger.error('connectWallet error', { error: (err as Error).message });
+    return sendError(res, { message: 'Server error' });
   }
 };
 
@@ -105,7 +104,7 @@ export const setupProfile = async (req: AuthRequest, res: Response) => {
     if (!username || !displayName || !avatarUrl || !bio) {
       return sendBadRequest(
         res,
-        "username, displayName, avatarUrl and bio are required",
+        'username, displayName, avatarUrl and bio are required',
       );
     }
 
@@ -115,17 +114,17 @@ export const setupProfile = async (req: AuthRequest, res: Response) => {
       { new: true, runValidators: true },
     );
 
-    if (!user) return sendNotFound(res, "User not found");
+    if (!user) return sendNotFound(res, 'User not found');
 
     logger.info(`Profile setup complete: ${user.walletAddress}`);
 
     return sendSuccess(res, {
-      message: "Profile updated successfully",
+      message: 'Profile updated successfully',
       data: { user: user.toPublicProfile() },
     });
   } catch (err) {
-    logger.error("setupProfile error", { error: (err as Error).message });
-    return sendError(res, { message: "Server error" });
+    logger.error('setupProfile error', { error: (err as Error).message });
+    return sendError(res, { message: 'Server error' });
   }
 };
 
@@ -134,17 +133,17 @@ export const refreshToken = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body as { refreshToken: string };
 
-    if (!refreshToken) return sendBadRequest(res, "Refresh token is required");
+    if (!refreshToken) return sendBadRequest(res, 'Refresh token is required');
 
     const secret = process.env.JWT_REFRESH_SECRET;
-    if (!secret) throw new Error("JWT_REFRESH_SECRET is not defined");
+    if (!secret) throw new Error('JWT_REFRESH_SECRET is not defined');
 
     const decoded = jwt.verify(refreshToken, secret) as RefreshTokenPayload;
 
-    const user = await User.findById(decoded.id).select("+refreshToken");
+    const user = await User.findById(decoded.id).select('+refreshToken');
 
     if (!user || user.refreshToken !== refreshToken) {
-      return sendUnauthorized(res, "Invalid refresh token");
+      return sendUnauthorized(res, 'Invalid refresh token');
     }
 
     const newAccessToken = generateAccessToken(
@@ -158,17 +157,17 @@ export const refreshToken = async (req: Request, res: Response) => {
     await user.save();
 
     return sendSuccess(res, {
-      message: "Token refreshed successfully",
+      message: 'Token refreshed successfully',
       data: { accessToken: newAccessToken, refreshToken: newRefreshToken },
     });
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
       return sendUnauthorized(
         res,
-        "Refresh token expired, please reconnect wallet",
+        'Refresh token expired, please reconnect wallet',
       );
     }
-    return sendUnauthorized(res, "Invalid refresh token");
+    return sendUnauthorized(res, 'Invalid refresh token');
   }
 };
 
@@ -177,10 +176,10 @@ export const logout = async (req: AuthRequest, res: Response) => {
   try {
     await User.findByIdAndUpdate(req.user?.id, { refreshToken: null });
     logger.info(`User logged out: ${req.user?.walletAddress}`);
-    return sendSuccess(res, { message: "Logged out successfully" });
+    return sendSuccess(res, { message: 'Logged out successfully' });
   } catch (err) {
-    logger.error("logout error", { error: (err as Error).message });
-    return sendError(res, { message: "Server error" });
+    logger.error('logout error', { error: (err as Error).message });
+    return sendError(res, { message: 'Server error' });
   }
 };
 
@@ -188,10 +187,10 @@ export const logout = async (req: AuthRequest, res: Response) => {
 export const getMe = async (req: AuthRequest, res: Response) => {
   try {
     const user = await User.findById(req.user?.id);
-    if (!user) return sendNotFound(res, "User not found");
+    if (!user) return sendNotFound(res, 'User not found');
     return sendSuccess(res, { data: { user: user.toPublicProfile() } });
   } catch (err) {
-    logger.error("getMe error", { error: (err as Error).message });
-    return sendError(res, { message: "Server error" });
+    logger.error('getMe error', { error: (err as Error).message });
+    return sendError(res, { message: 'Server error' });
   }
 };
