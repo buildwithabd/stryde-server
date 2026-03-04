@@ -6,3 +6,4 @@ logs/
 dist/
 coverage/
 server-wallet.json
+test-wallet.mjs
