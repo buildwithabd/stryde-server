@@ -1,5 +1,4 @@
-import type { Document } from "mongoose";
-import type mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 export interface ICoordinate {
   latitude: number;
@@ -34,3 +33,65 @@ export interface IWalk {
 }
 
 export interface IWalkDocument extends IWalk, Document {}
+
+const coordinateSchema = new mongoose.Schema<ICoordinate>(
+  {
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+    timestamp: { type: Number, required: true },
+    altitude: { type: Number },
+    accuracy: { type: Number },
+  },
+  { _id: false },
+);
+
+const walkSchema = new mongoose.Schema<IWalkDocument>(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    walletAddress: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    activityType: {
+      type: String,
+      enum: ["walk", "run", "hike", "ride"],
+      default: "walk",
+    },
+    startTime: { type: Date, required: true },
+    endTime: { type: Date, required: true },
+    duration: { type: Number, required: true, min: 0 },
+    distance: { type: Number, required: true, min: 0 },
+    steps: { type: Number, default: 0, min: 0 },
+    calories: { type: Number, default: 0, min: 0 },
+    pace: { type: Number, default: 0 },
+    averageSpeed: { type: Number, default: 0 },
+    elevationGain: { type: Number, default: 0 },
+    coordinates: {
+      type: [coordinateSchema],
+      required: true,
+      validate: {
+        validator: (coords: ICoordinate[]) => coords.length >= 2,
+        message: "Walk must have at least 2 coordinates",
+      },
+    },
+    tokensEarned: { type: Number, default: 0, min: 0 },
+    isSeeker: { type: Boolean, default: false },
+    seekerMultiplier: { type: Number, default: 1.0 },
+    status: {
+      type: String,
+      enum: ["pending", "verified", "rejected", "minting", "minted"],
+      default: "pending",
+    },
+    rejectionReason: { type: String },
+    mintTxSignature: { type: String },
+  },
+  {
+    timestamps: true,
+  },
+);
