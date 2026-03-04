@@ -7,8 +7,9 @@ import morgan from "morgan";
 
 import logger from "./utils/logger.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
-import authRoutes from "./routes/auth.js";
 import { authLimiter, globalLimiter } from "./middleware/rateLimiter.js";
+import authRoutes from "./routes/auth.js";
+import walksRoutes from "./routes/walks.js";
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.get("/health", (req: Request, res: Response) => {
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/walks", walksRoutes);
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
