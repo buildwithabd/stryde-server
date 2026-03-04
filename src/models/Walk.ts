@@ -1,4 +1,4 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Model } from "mongoose";
 
 export interface ICoordinate {
   latitude: number;
@@ -95,3 +95,17 @@ const walkSchema = new mongoose.Schema<IWalkDocument>(
     timestamps: true,
   },
 );
+
+// Indexes for leaderboard queries
+walkSchema.index({ userId: 1, createdAt: -1 });
+walkSchema.index({ walletAddress: 1, createdAt: -1 });
+walkSchema.index({ status: 1 });
+walkSchema.index({ tokensEarned: -1 });
+walkSchema.index({ distance: -1 });
+
+const Walk: Model<IWalkDocument> = mongoose.model<IWalkDocument>(
+  "Walk",
+  walkSchema,
+);
+
+export default Walk;
