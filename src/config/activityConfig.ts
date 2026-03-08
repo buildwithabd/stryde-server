@@ -18,8 +18,8 @@ export const ACTIVITY_CONFIG: Record<ActivityType, ActivityConfig> = {
     tokenMultiplier: 1.0,
     trackSteps: true,
     trackElevation: false,
-    minDurationSeconds: 300, // 5 minutes
-    minDistanceMeters: 200, // 200 meters
+    minDurationSeconds: 60, // 5 minutes
+    minDistanceMeters: 100, // 200 meters
     caloriesPerKm: 65,
   },
   run: {
