@@ -1,37 +1,35 @@
-import mongoose, { Document, Model } from 'mongoose';
-import type { IUser, PublicProfile } from '../types/user.js';
+import mongoose, { Document, Model } from "mongoose";
+import type { IUser, PublicProfile } from "../types/user.js";
 
-// Extend with Mongoose Document
 export interface IUserDocument extends IUser, Document {
   toPublicProfile(): PublicProfile;
 }
 
 const userSchema = new mongoose.Schema<IUserDocument>(
   {
-    // Profile - required
     walletAddress: {
       type: String,
-      required: [true, 'Wallet address is required'],
+      required: [true, "Wallet address is required"],
       unique: true,
       trim: true,
     },
     username: {
       type: String,
-      required: [true, 'Username is required'],
+      required: [true, "Username is required"],
       unique: true,
       trim: true,
       lowercase: true,
-      minlength: [3, 'Username must be at least 3 characters'],
-      maxlength: [20, 'Username cannot exceed 20 characters'],
+      minlength: [3, "Username must be at least 3 characters"],
+      maxlength: [20, "Username cannot exceed 20 characters"],
       match: [
         /^[a-z0-9_]+$/,
-        'Username can only contain letters, numbers and underscores',
+        "Username can only contain letters, numbers and underscores",
       ],
     },
     displayName: {
       type: String,
       trim: true,
-      maxlength: [30, 'Display name cannot exceed 30 characters'],
+      maxlength: [30, "Display name cannot exceed 30 characters"],
       default: null,
     },
     avatarUrl: {
@@ -39,44 +37,41 @@ const userSchema = new mongoose.Schema<IUserDocument>(
     },
     bio: {
       type: String,
-      maxlength: [160, 'Bio cannot exceed 160 characters'],
+      maxlength: [160, "Bio cannot exceed 160 characters"],
     },
 
-    // Profile - optional
     email: {
       type: String,
       unique: true,
       sparse: true,
       lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
+      match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
     },
     phone: { type: String, trim: true },
     fullName: {
       type: String,
       trim: true,
-      maxlength: [60, 'Full name cannot exceed 60 characters'],
+      maxlength: [60, "Full name cannot exceed 60 characters"],
     },
     heightCm: { type: Number, min: 50, max: 300 },
     weightKg: { type: Number, min: 10, max: 500 },
     gender: {
       type: String,
-      enum: ['male', 'female', 'non-binary', 'prefer_not_to_say'],
+      enum: ["male", "female", "non-binary", "prefer_not_to_say"],
     },
     fitnessLevel: {
       type: String,
-      enum: ['beginner', 'intermediate', 'advanced'],
+      enum: ["beginner", "intermediate", "advanced"],
     },
 
-    // Location
     location: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
+      type: { type: String, enum: ["Point"], default: "Point" },
       coordinates: { type: [Number], default: [0, 0] },
       city: { type: String },
       country: { type: String },
     },
 
-    // Auth
     refreshToken: { type: String, select: false },
 
     // Wallet & Solana
@@ -142,18 +137,18 @@ const userSchema = new mongoose.Schema<IUserDocument>(
 );
 
 // Indexes
-userSchema.index({ location: '2dsphere' });
+userSchema.index({ location: "2dsphere" });
 userSchema.index({ tokenBalance: -1 });
 userSchema.index({ reputationScore: -1 });
-userSchema.index({ 'stats.totalSteps': -1 });
+userSchema.index({ "stats.totalSteps": -1 });
 
 // Virtuals
-userSchema.virtual('totalDistanceKm').get(function () {
+userSchema.virtual("totalDistanceKm").get(function () {
   return (this.stats.totalDistanceMeters / 1000).toFixed(2);
 });
 
 // Methods
-userSchema.methods['toPublicProfile'] = function (): PublicProfile {
+userSchema.methods["toPublicProfile"] = function (): PublicProfile {
   return {
     id: this._id.toString(),
     walletAddress: this.walletAddress,
@@ -173,7 +168,7 @@ userSchema.methods['toPublicProfile'] = function (): PublicProfile {
 };
 
 const User: Model<IUserDocument> = mongoose.model<IUserDocument>(
-  'User',
+  "User",
   userSchema,
 );
 
